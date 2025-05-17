@@ -1,0 +1,261 @@
+{% extends "layout.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Dashboard</h1>
+    <a href="{{ url_for('new_task') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> New Task
+    </a>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card dashboard-card h-100 border-left-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase mb-1 text-muted">Total Tasks</div>
+                        <div class="h2 mb-0 fw-bold">{{ total_tasks }}</div>
+                    </div>
+                    <div class="card-icon text-primary">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card dashboard-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase mb-1 text-muted">Pending</div>
+                        <div class="h2 mb-0 fw-bold">{{ pending_tasks }}</div>
+                    </div>
+                    <div class="card-icon text-secondary">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card dashboard-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase mb-1 text-muted">In Progress</div>
+                        <div class="h2 mb-0 fw-bold">{{ in_progress_tasks }}</div>
+                    </div>
+                    <div class="card-icon text-primary">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6 mb-4">
+        <div class="card dashboard-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-xs text-uppercase mb-1 text-muted">Completed</div>
+                        <div class="h2 mb-0 fw-bold">{{ completed_tasks }}</div>
+                    </div>
+                    <div class="card-icon text-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts & Lists Row -->
+<div class="row">
+    <!-- Task Status Chart -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Task Status</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 250px;">
+                    <canvas id="taskStatusChart" 
+                            data-pending="{{ pending_tasks }}" 
+                            data-in-progress="{{ in_progress_tasks }}" 
+                            data-completed="{{ completed_tasks }}">
+                    </canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Tasks -->
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Tasks</h5>
+                <a href="{{ url_for('admin_tasks') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Client</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in recent_tasks %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('edit_task', task_id=task.id) }}">{{ task.title }}</a>
+                                </td>
+                                <td>{{ task.client.username }}</td>
+                                <td>
+                                    <span class="badge {{ 'bg-success' if task.status == 'completed' else ('bg-primary' if task.status == 'in-progress' else 'bg-secondary') }}">
+                                        {{ task.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if task.deadline %}
+                                        <span class="due-date" data-date="{{ task.deadline }}" data-bs-toggle="tooltip" title="{{ task.deadline.strftime('%d %b, %Y - %H:%M') }}">
+                                            {{ task.deadline.strftime('%d %b, %Y') }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-3">No tasks found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Timeline Chart & Clients Row -->
+<div class="row">
+    <!-- Timeline Chart -->
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Task Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 250px;">
+                    <canvas id="taskTimelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients List -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Clients</h5>
+                <a href="{{ url_for('admin_clients') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for client in clients[:5] %}
+                    <a href="{{ url_for('admin_tasks', client_id=client.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-user-circle me-2"></i>
+                            {{ client.username }}
+                        </div>
+                        <span class="badge bg-primary rounded-pill">
+                            {{ client.tasks_assigned|selectattr('creator_id', 'equalto', current_user.id)|list|length }} tasks
+                        </span>
+                    </a>
+                    {% else %}
+                    <div class="list-group-item text-center py-3">No clients found</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks Due Soon -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Tasks Due Soon</h5>
+                <a href="{{ url_for('admin_tasks') }}" class="btn btn-sm btn-outline-primary">View All Tasks</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Client</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Due Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in due_soon %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('edit_task', task_id=task.id) }}">{{ task.title }}</a>
+                                </td>
+                                <td>{{ task.client.username }}</td>
+                                <td>
+                                    <span class="badge {{ 'bg-danger' if task.priority == 'high' else ('bg-warning' if task.priority == 'medium' else 'bg-info') }}">
+                                        {{ task.priority }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {{ 'bg-success' if task.status == 'completed' else ('bg-primary' if task.status == 'in-progress' else 'bg-secondary') }}">
+                                        {{ task.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if task.deadline %}
+                                        <span class="due-date" data-date="{{ task.deadline }}" data-bs-toggle="tooltip" title="{{ task.deadline.strftime('%d %b, %Y - %H:%M') }}">
+                                            {{ task.deadline.strftime('%d %b, %Y') }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">No tasks due soon</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+{% endblock %}
