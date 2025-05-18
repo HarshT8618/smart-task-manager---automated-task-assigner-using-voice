@@ -687,6 +687,34 @@ def analyze_task_priority_api():
     })
 
 
+@app.route('/api/voice-task', methods=['POST'])
+@login_required
+@admin_required
+def voice_task_api():
+    """API endpoint to process voice commands and create tasks"""
+    # Get audio data from request
+    if not request.is_json or 'audio' not in request.json:
+        return jsonify({'error': 'No audio data provided'}), 400
+    
+    audio_data = request.json.get('audio')
+    
+    # Process voice command
+    from utils import process_voice_command
+    result = process_voice_command(audio_data)
+    
+    if not result['success']:
+        return jsonify({
+            'success': False,
+            'error': result.get('error', 'Failed to process voice command')
+        }), 500
+    
+    return jsonify({
+        'success': True,
+        'transcript': result['transcript'],
+        'task_info': result['task_info']
+    })
+
+
 @app.context_processor
 def utility_processor():
     def get_unread_notification_count():

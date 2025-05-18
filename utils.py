@@ -203,3 +203,85 @@ def analyze_task_priority(task_description, deadline_days=None):
         current_app.logger.error(f"Error analyzing task priority: {str(e)}")
         # Default to medium on error
         return 'medium'
+
+
+def process_voice_command(audio_base64):
+    """
+    Process voice command to create a task
+    
+    Args:
+        audio_base64 (str): Base64 encoded audio data
+        
+    Returns:
+        dict: Processed task details
+    """
+    try:
+        import base64
+        import tempfile
+        
+        # Decode base64 audio
+        audio_data = base64.b64decode(audio_base64.split(',')[1] if ',' in audio_base64 else audio_base64)
+        
+        # Save to temporary file
+        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as temp_audio:
+            temp_path = temp_audio.name
+            temp_audio.write(audio_data)
+        
+        # Transcribe audio using OpenAI Whisper
+        with open(temp_path, "rb") as audio_file:
+            transcript = openai_client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+        
+        # Delete temporary file
+        os.remove(temp_path)
+        
+        # Process the transcript to extract task information
+        prompt = (
+            f"Extract task information from this voice command: '{transcript.text}'\n"
+            "Parse it into JSON format with the following fields:\n"
+            "1. title: The task title\n"
+            "2. description: Detailed task description\n"
+            "3. service_type: Type of service (e.g., Legal, IT, Consulting)\n"
+            "4. priority: Task priority (low, medium, high)\n"
+            "5. client_name: Name of the client (if mentioned)\n"
+            "If any field is not mentioned, make a reasonable inference or leave it blank."
+        )
+        
+        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
+        # do not change this unless explicitly requested by the user
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are an assistant that extracts task information from voice commands."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.3,
+            max_tokens=500
+        )
+        
+        # Parse the response
+        content = response.choices[0].message.content
+        if content is not None:
+            result = json.loads(content)
+            return {
+                'transcript': transcript.text,
+                'task_info': result,
+                'success': True
+            }
+        else:
+            raise ValueError("No content received from AI")
+            
+    except Exception as e:
+        current_app.logger.error(f"Error processing voice command: {str(e)}")
+        return {
+            'transcript': '',
+            'task_info': {},
+            'success': False,
+            'error': str(e)
+        }
