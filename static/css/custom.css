@@ -1,23 +1,28 @@
 /* Custom styles for SmartTask platform */
 
 :root {
-    --glass-bg: rgba(0, 0, 0, 0.15);
-    --glass-border: 1px solid rgba(0, 0, 0, 0.2);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+    --glass-bg: rgba(31, 41, 55, 0.4);
+    --glass-border: 1px solid rgba(31, 41, 55, 0.4);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
     --card-blur: 8px;
-    --card-hover-transform: translateY(-10px);
-    --primary-color: #121212;
-    --secondary-color: #1e1e1e;
-    --text-color: #ffffff;
-    --accent-color: #2d2d2d;
+    --card-hover-transform: translateY(-8px);
+    --primary-color: #0f172a;
+    --secondary-color: #1e293b;
+    --text-color: #f8fafc;
+    --accent-color: #334155;
+    --card-bg: #1e293b;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --highlight-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    --dark-gradient: linear-gradient(135deg, #0f172a, #1e293b);
 }
 
 body {
-    background: linear-gradient(120deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    background: var(--dark-gradient);
     background-attachment: fixed;
     background-size: cover;
     min-height: 100vh;
     color: var(--text-color);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Utility classes */
@@ -25,14 +30,13 @@ body {
     cursor: pointer;
 }
 
-/* Glassmorphism Effects */
+/* Card styles */
 .card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--card-blur));
-    -webkit-backdrop-filter: blur(var(--card-blur));
-    border: var(--glass-border);
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     box-shadow: var(--glass-shadow);
     transition: all 0.3s ease;
+    border-radius: 0.75rem;
 }
 
 /* Dashboard cards */
@@ -40,11 +44,12 @@ body {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     overflow: hidden;
     position: relative;
+    background: var(--secondary-color);
 }
 
 .dashboard-card:hover {
     transform: var(--card-hover-transform);
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
 }
 
 .dashboard-card::before {
@@ -54,7 +59,7 @@ body {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -65,13 +70,26 @@ body {
 }
 
 .card-icon {
-    font-size: 2.8rem;
+    font-size: 2.2rem;
     opacity: 0.9;
     transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
 }
 
 .dashboard-card:hover .card-icon {
     transform: scale(1.1);
+}
+
+.dashboard-card .card-title {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* Task cards */
