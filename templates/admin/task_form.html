@@ -10,6 +10,40 @@
     </a>
 </div>
 
+<div class="card mb-4">
+    <div class="card-header bg-primary bg-opacity-25">
+        <h5 class="mb-0">AI Task Generator</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="ai_service_type" class="form-label">Service Type</label>
+                <select class="form-select" id="ai_service_type">
+                    <option value="">Select Service Type</option>
+                    <option value="Legal">Legal</option>
+                    <option value="Consulting">Consulting</option>
+                    <option value="Compliance">Compliance</option>
+                    <option value="IT">IT</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="col-md-8 mb-3">
+                <label for="ai_keywords" class="form-label">Task Keywords</label>
+                <input type="text" class="form-control" id="ai_keywords" placeholder="Enter keywords or brief description">
+            </div>
+            <div class="col-12">
+                <button type="button" id="generate-task-btn" class="btn btn-primary">
+                    <i class="fas fa-robot me-2"></i> Generate Task
+                </button>
+                <button type="button" id="analyze-priority-btn" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-star-half-alt me-2"></i> Suggest Priority
+                </button>
+                <div id="ai-generation-status" class="mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-body">
         <form method="POST" action="{{ url_for('edit_task', task_id=task.id) if task else url_for('new_task') }}">
