@@ -426,35 +426,53 @@ def update_task_status(task_id):
     
     # Make sure the client is assigned to this task
     if task.client_id != current_user.id:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'You are not authorized to update this task'})
         flash('You are not authorized to update this task', 'danger')
         return redirect(url_for('client_tasks'))
     
     new_status = request.form.get('status')
     if new_status in ['pending', 'in-progress', 'completed']:
-        task.status = new_status
-        db.session.commit()
+        # Only update if the status is actually changing
+        if task.status != new_status:
+            old_status = task.status
+            task.status = new_status
+            task.updated_at = datetime.utcnow()
+            db.session.commit()
+            
+            # Create notification for the admin
+            notification = Notification(
+                title="Task Status Updated",
+                message=f"Task '{task.title}' status updated from {old_status} to {new_status}",
+                user_id=task.creator_id,
+                task_id=task.id
+            )
+            db.session.add(notification)
+            db.session.commit()
+            
+            # Send email notification
+            admin = User.query.get(task.creator_id)
+            if admin:
+                send_task_notification_email(admin.email, "Task Status Updated", 
+                                            f"Task '{task.title}' status updated from {old_status} to {new_status}")
         
-        # Create notification for the admin
-        notification = Notification(
-            title="Task Status Updated",
-            message=f"Task '{task.title}' status updated to {new_status}",
-            user_id=task.creator_id,
-            task_id=task.id
-        )
-        db.session.add(notification)
-        db.session.commit()
-        
-        # Send email notification
-        admin = User.query.get(task.creator_id)
-        if admin:
-            send_task_notification_email(admin.email, "Task Status Updated", 
-                                        f"Task '{task.title}' status updated to {new_status}")
+        # Check if this is an AJAX request or a regular form submission
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                'success': True, 
+                'message': f'Task status updated to {new_status}',
+                'task_id': task_id,
+                'new_status': new_status
+            })
         
         flash(f'Task status updated to {new_status}', 'success')
+        return redirect(url_for('client_task_detail', task_id=task_id))
     else:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': 'Invalid status value'})
+        
         flash('Invalid status value', 'danger')
-    
-    return redirect(url_for('client_task_detail', task_id=task_id))
+        return redirect(url_for('client_task_detail', task_id=task_id))
 
 
 @app.route('/tasks/<int:task_id>/comments', methods=['POST'])

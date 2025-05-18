@@ -1,8 +1,13 @@
 import os
+import json
 from datetime import timedelta, timezone
 from flask import current_app
 from flask_mail import Message
 from app import mail
+from openai import OpenAI
+
+# Initialize OpenAI client
+openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
 def send_task_notification_email(to, subject, body):
@@ -89,3 +94,107 @@ def get_status_badge_class(status):
         return "bg-primary"
     else:
         return "bg-secondary"
+
+
+def generate_ai_task_description(service_type, keywords, client_name=None, priority=None):
+    """
+    Generate a task description using AI based on input parameters
+    
+    Args:
+        service_type (str): Type of service (Legal, Consulting, IT, etc.)
+        keywords (str): Keywords or brief description of the task
+        client_name (str, optional): Name of the client
+        priority (str, optional): Priority level (low, medium, high)
+        
+    Returns:
+        dict: Generated task title and description
+    """
+    try:
+        # Build the prompt with available information
+        prompt = f"Generate a professional {service_type} task"
+        if client_name:
+            prompt += f" for client {client_name}"
+        if priority:
+            prompt += f" with {priority} priority"
+        prompt += f". Task keywords: {keywords}"
+        prompt += "\nFormat the response as JSON with 'title' (max 10 words) and 'description' (2-3 paragraphs) fields."
+        
+        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
+        # do not change this unless explicitly requested by the user
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": f"You are a professional {service_type} task description generator. Create clear, concise task descriptions that follow industry standards."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.7,
+            max_tokens=500
+        )
+        
+        # Parse the response
+        content = response.choices[0].message.content
+        result = json.loads(content)
+        
+        # Ensure we have the required fields
+        if 'title' not in result or 'description' not in result:
+            raise ValueError("AI response missing required fields")
+            
+        return {
+            'title': result['title'],
+            'description': result['description'],
+            'success': True
+        }
+    except Exception as e:
+        current_app.logger.error(f"Error generating AI task description: {str(e)}")
+        return {
+            'title': '',
+            'description': '',
+            'success': False,
+            'error': str(e)
+        }
+
+
+def analyze_task_priority(task_description, deadline_days=None):
+    """
+    Analyze task description to suggest appropriate priority
+    
+    Args:
+        task_description (str): Task description 
+        deadline_days (int, optional): Days until deadline
+        
+    Returns:
+        str: Suggested priority (low, medium, high)
+    """
+    try:
+        # Build the prompt with available information
+        prompt = f"Analyze this task description and recommend a priority level (low, medium, or high):\n\n{task_description}"
+        if deadline_days is not None:
+            prompt += f"\n\nThe deadline for this task is {deadline_days} days from now."
+            
+        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
+        # do not change this unless explicitly requested by the user
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a task priority analyzer. Respond with only 'low', 'medium', or 'high' based on task urgency and importance."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.3,
+            max_tokens=50
+        )
+        
+        # Get the suggested priority
+        suggested_priority = response.choices[0].message.content.strip().lower()
+        
+        # Validate and return the priority
+        if suggested_priority in ['low', 'medium', 'high']:
+            return suggested_priority
+        else:
+            # Default to medium if response is invalid
+            return 'medium'
+            
+    except Exception as e:
+        current_app.logger.error(f"Error analyzing task priority: {str(e)}")
+        # Default to medium on error
+        return 'medium'
