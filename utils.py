@@ -241,12 +241,13 @@ def process_voice_command(audio_base64):
         prompt = (
             f"Extract task information from this voice command: '{transcript.text}'\n"
             "Parse it into JSON format with the following fields:\n"
-            "1. title: The task title\n"
-            "2. description: Detailed task description\n"
-            "3. service_type: Type of service (e.g., Legal, IT, Consulting)\n"
-            "4. priority: Task priority (low, medium, high)\n"
-            "5. client_name: Name of the client (if mentioned)\n"
-            "If any field is not mentioned, make a reasonable inference or leave it blank."
+            "1. title: The task title (create a concise, professional title based on the context)\n"
+            "2. description: Detailed task description (expand on what was mentioned to create a comprehensive task description)\n"
+            "3. service_type: Type of service (e.g., Legal, IT, Consulting, Design, etc.)\n"
+            "4. priority: Task priority (low, medium, high - infer based on urgency words or task importance)\n"
+            "5. client_name: Name of the client (exact name as mentioned)\n"
+            "6. deadline: Suggested deadline in days from now (if mentioned or can be reasonably inferred)\n"
+            "Always extract as much detail as possible from the voice command. If specific information isn't provided, make a reasonable inference based on the context of the task."
         )
         
         # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.

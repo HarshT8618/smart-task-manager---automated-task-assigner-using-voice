@@ -75,6 +75,7 @@ async function toggleRecording() {
             // Update button
             recordButton.classList.remove('btn-primary');
             recordButton.classList.add('btn-danger');
+            recordButton.classList.add('recording-pulse');
             recordButton.innerHTML = '<i class="fas fa-stop"></i> Stop Recording';
             
         } catch (error) {
@@ -89,6 +90,7 @@ async function toggleRecording() {
             
             // Update button
             recordButton.classList.remove('btn-danger');
+            recordButton.classList.remove('recording-pulse');
             recordButton.classList.add('btn-primary');
             recordButton.innerHTML = '<i class="fas fa-microphone"></i> Start New Recording';
             
@@ -155,22 +157,97 @@ function populateTaskForm(taskInfo) {
     document.getElementById('voice-task-title').value = taskInfo.title || '';
     document.getElementById('voice-task-description').value = taskInfo.description || '';
     document.getElementById('voice-task-service-type').value = taskInfo.service_type || '';
-    document.getElementById('voice-task-priority').value = taskInfo.priority || 'medium';
+    
+    // Set priority if provided
+    if (taskInfo.priority && ['low', 'medium', 'high'].includes(taskInfo.priority.toLowerCase())) {
+        document.getElementById('voice-task-priority').value = taskInfo.priority.toLowerCase();
+    }
     
     // If client name is provided, try to find matching client in dropdown
     if (taskInfo.client_name) {
         const clientSelect = document.getElementById('voice-task-client');
         const clientName = taskInfo.client_name.toLowerCase();
         
-        // Try to find matching client
+        // Try to find matching client - first look for exact matches
+        let found = false;
         for (let i = 0; i < clientSelect.options.length; i++) {
             const option = clientSelect.options[i];
-            if (option.text.toLowerCase().includes(clientName)) {
+            const optionText = option.text.toLowerCase();
+            
+            // Check if the option text is an exact match or contains the client name
+            if (optionText === clientName || optionText.includes(clientName)) {
                 clientSelect.value = option.value;
+                found = true;
                 break;
             }
         }
+        
+        // If not found, try looking for partial matches
+        if (!found) {
+            for (let i = 0; i < clientSelect.options.length; i++) {
+                const option = clientSelect.options[i];
+                const words = taskInfo.client_name.toLowerCase().split(/\s+/);
+                
+                // Check if any word in the client name matches the option text
+                for (const word of words) {
+                    if (word.length > 2 && option.text.toLowerCase().includes(word)) {
+                        clientSelect.value = option.value;
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (found) break;
+            }
+        }
     }
+    
+    // Set deadline if provided (in days from now)
+    if (taskInfo.deadline && !isNaN(taskInfo.deadline)) {
+        const daysToAdd = parseInt(taskInfo.deadline);
+        const deadlineDate = new Date();
+        deadlineDate.setDate(deadlineDate.getDate() + daysToAdd);
+        
+        // Format the date for datetime-local input (YYYY-MM-DDThh:mm)
+        const year = deadlineDate.getFullYear();
+        const month = String(deadlineDate.getMonth() + 1).padStart(2, '0');
+        const day = String(deadlineDate.getDate()).padStart(2, '0');
+        const hours = String(deadlineDate.getHours()).padStart(2, '0');
+        const minutes = String(deadlineDate.getMinutes()).padStart(2, '0');
+        
+        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+        document.getElementById('voice-task-deadline').value = formattedDate;
+    }
+    
+    // Highlight the populated fields
+    highlightPopulatedFields();
+}
+
+/**
+ * Highlight the fields that were populated from voice command
+ */
+function highlightPopulatedFields() {
+    const fields = [
+        'voice-task-title',
+        'voice-task-description',
+        'voice-task-service-type',
+        'voice-task-priority',
+        'voice-task-client',
+        'voice-task-deadline'
+    ];
+    
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field && field.value) {
+            field.classList.add('is-valid');
+            
+            // Add animation effect
+            field.style.animation = 'highlight-field 1.5s ease';
+            setTimeout(() => {
+                field.style.animation = '';
+            }, 1500);
+        }
+    });
 }
 
 /**
