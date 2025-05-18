@@ -99,7 +99,7 @@
                 </div>
             </div>
             <div class="col-md-3 mb-3">
-                <div class="card border-light mb-3 {% if task.deadline and task.deadline < now %}border-danger{% endif %}">
+                <div class="card border-light mb-3 {% if task.deadline and task.deadline < datetime.now() %}border-danger{% endif %}">
                     <div class="card-body p-3">
                         <h6 class="card-subtitle mb-1 text-muted">Deadline</h6>
                         <p class="mb-0 due-date" data-date="{{ task.deadline }}">

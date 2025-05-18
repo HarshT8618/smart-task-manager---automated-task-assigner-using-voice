@@ -415,7 +415,7 @@ def client_task_detail(task_id):
     # Get attachments for this task
     attachments = Attachment.query.filter_by(task_id=task_id).order_by(Attachment.uploaded_at.desc()).all()
     
-    return render_template('client/task_detail.html', task=task, comments=comments, attachments=attachments)
+    return render_template('client/task_detail.html', task=task, comments=comments, attachments=attachments, datetime=datetime)
 
 
 @app.route('/client/tasks/<int:task_id>/update-status', methods=['POST'])
