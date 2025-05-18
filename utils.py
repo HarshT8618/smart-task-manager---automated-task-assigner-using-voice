@@ -134,11 +134,14 @@ def generate_ai_task_description(service_type, keywords, client_name=None, prior
         
         # Parse the response
         content = response.choices[0].message.content
-        result = json.loads(content)
-        
-        # Ensure we have the required fields
-        if 'title' not in result or 'description' not in result:
-            raise ValueError("AI response missing required fields")
+        if content is not None:
+            result = json.loads(content)
+            
+            # Ensure we have the required fields
+            if 'title' not in result or 'description' not in result:
+                raise ValueError("AI response missing required fields")
+        else:
+            raise ValueError("No content received from AI")
             
         return {
             'title': result['title'],
@@ -185,14 +188,16 @@ def analyze_task_priority(task_description, deadline_days=None):
         )
         
         # Get the suggested priority
-        suggested_priority = response.choices[0].message.content.strip().lower()
-        
-        # Validate and return the priority
-        if suggested_priority in ['low', 'medium', 'high']:
-            return suggested_priority
-        else:
-            # Default to medium if response is invalid
-            return 'medium'
+        content = response.choices[0].message.content
+        if content is not None:
+            suggested_priority = content.strip().lower()
+            
+            # Validate and return the priority
+            if suggested_priority in ['low', 'medium', 'high']:
+                return suggested_priority
+            
+        # Default to medium if response is invalid or empty
+        return 'medium'
             
     except Exception as e:
         current_app.logger.error(f"Error analyzing task priority: {str(e)}")

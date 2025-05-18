@@ -10,7 +10,7 @@ from werkzeug.utils import secure_filename
 from app import app, db
 from models import User, Task, Comment, Attachment, Notification
 from auth import admin_required, client_required
-from utils import send_task_notification_email
+from utils import send_task_notification_email, get_status_badge_class, generate_ai_task_description, analyze_task_priority
 
 
 @app.route('/')
