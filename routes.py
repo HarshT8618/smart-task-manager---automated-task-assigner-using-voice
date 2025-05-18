@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from functools import wraps
 
-from flask import render_template, redirect, url_for, flash, request, jsonify, send_from_directory, abort
+from flask import render_template, redirect, url_for, flash, request, jsonify, send_from_directory, abort, make_response
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 
@@ -627,6 +627,64 @@ def toggle_theme():
     resp = redirect(request.referrer or url_for('index'))
     resp.set_cookie('theme', theme, max_age=30*24*60*60)  # 30 days
     return resp
+
+
+@app.route('/api/generate-task-description', methods=['POST'])
+@login_required
+@admin_required
+def generate_task_description_api():
+    """API endpoint to generate task descriptions using AI"""
+    service_type = request.form.get('service_type', '')
+    keywords = request.form.get('keywords', '')
+    client_name = request.form.get('client_name', None)
+    priority = request.form.get('priority', None)
+    
+    if not service_type or not keywords:
+        return jsonify({
+            'success': False,
+            'error': 'Service type and keywords are required'
+        }), 400
+    
+    result = generate_ai_task_description(service_type, keywords, client_name, priority)
+    
+    if result.get('success', False):
+        return jsonify({
+            'success': True,
+            'title': result['title'],
+            'description': result['description']
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'error': result.get('error', 'Failed to generate task description')
+        }), 500
+
+
+@app.route('/api/analyze-priority', methods=['POST'])
+@login_required
+@admin_required
+def analyze_task_priority_api():
+    """API endpoint to analyze and suggest task priority based on description"""
+    description = request.form.get('description', '')
+    deadline_days = request.form.get('deadline_days', None)
+    
+    if not description:
+        return jsonify({
+            'success': False,
+            'error': 'Task description is required'
+        }), 400
+    
+    if deadline_days and deadline_days.isdigit():
+        deadline_days = int(deadline_days)
+    else:
+        deadline_days = None
+    
+    priority = analyze_task_priority(description, deadline_days)
+    
+    return jsonify({
+        'success': True,
+        'priority': priority
+    })
 
 
 @app.context_processor
