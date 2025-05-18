@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="{{ get_theme() }}">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -102,17 +102,6 @@
                             </div>
                         </li>
                         
-                        <!-- Theme toggle -->
-                        <li class="nav-item">
-                            <button id="theme-toggle" class="nav-link" type="button" title="{{ 'Switch to light mode' if get_theme() == 'dark' else 'Switch to dark mode' }}">
-                                {% if get_theme() == 'dark' %}
-                                    <i class="fas fa-sun"></i>
-                                {% else %}
-                                    <i class="fas fa-moon"></i>
-                                {% endif %}
-                            </button>
-                        </li>
-                        
                         <!-- User actions -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -125,17 +114,6 @@
                             </ul>
                         </li>
                     {% else %}
-                        <!-- Theme toggle for non-authenticated users -->
-                        <li class="nav-item">
-                            <button id="theme-toggle" class="nav-link" type="button" title="{{ 'Switch to light mode' if get_theme() == 'dark' else 'Switch to dark mode' }}">
-                                {% if get_theme() == 'dark' %}
-                                    <i class="fas fa-sun"></i>
-                                {% else %}
-                                    <i class="fas fa-moon"></i>
-                                {% endif %}
-                            </button>
-                        </li>
-                        
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('login') }}">Login</a>
                         </li>
@@ -147,6 +125,14 @@
             </div>
         </div>
     </nav>
+    
+    <!-- Overlay for mobile sidebar -->
+    <div class="overlay" id="sidebarOverlay"></div>
+    
+    <!-- Mobile sidebar toggle button -->
+    <div class="sidebar-toggle d-md-none" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </div>
     
     <!-- Main Content -->
     <main class="py-4">
@@ -163,8 +149,59 @@
                 {% endif %}
             {% endwith %}
             
-            <!-- Page Content -->
-            {% block content %}{% endblock %}
+            {% if current_user.is_authenticated %}
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="sidebar mb-4" id="sidebar">
+                            <div class="p-3 mb-3 rounded">
+                                <h5 class="mb-0">{{ current_user.username }}</h5>
+                                <small class="text-muted">{{ current_user.role.capitalize() }}</small>
+                            </div>
+                            
+                            <div class="sidebar-nav">
+                                {% if current_user.role == 'admin' %}
+                                    <!-- Admin Menu -->
+                                    <a class="nav-link {% if request.path == url_for('admin_dashboard') %}active{% endif %}" 
+                                       href="{{ url_for('admin_dashboard') }}">
+                                        <i class="fas fa-chart-line"></i> Dashboard
+                                    </a>
+                                    <a class="nav-link {% if request.path == url_for('admin_tasks') %}active{% endif %}" 
+                                       href="{{ url_for('admin_tasks') }}">
+                                        <i class="fas fa-clipboard-list"></i> Manage Tasks
+                                    </a>
+                                    <a class="nav-link {% if request.path == url_for('admin_clients') %}active{% endif %}" 
+                                       href="{{ url_for('admin_clients') }}">
+                                        <i class="fas fa-users"></i> Manage Clients
+                                    </a>
+                                    <a class="nav-link {% if request.path.startswith('/admin/tasks/new') %}active{% endif %}" 
+                                       href="{{ url_for('new_task') }}">
+                                        <i class="fas fa-plus-circle"></i> New Task
+                                    </a>
+                                {% else %}
+                                    <!-- Client Menu -->
+                                    <a class="nav-link {% if request.path == url_for('client_dashboard') %}active{% endif %}" 
+                                       href="{{ url_for('client_dashboard') }}">
+                                        <i class="fas fa-chart-line"></i> Dashboard
+                                    </a>
+                                    <a class="nav-link {% if request.path == url_for('client_tasks') %}active{% endif %}" 
+                                       href="{{ url_for('client_tasks') }}">
+                                        <i class="fas fa-clipboard-list"></i> My Tasks
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-9 content-wrapper" id="contentWrapper">
+                        {% block content %}{% endblock %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="row">
+                    <div class="col-12">
+                        {{ self.content() }}
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </main>
     
@@ -197,7 +234,6 @@
     
     <!-- Core JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
     <script src="{{ url_for('static', filename='js/ai-task.js') }}"></script>
     
